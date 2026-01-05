@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Snake Master</title>
+    <style>
+        body {
+            background-color: #050505;
+            color: white;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* स्कोर बोर्ड */
+        #score-board {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: #f50057;
+            font-weight: bold;
+        }
+
+        /* गेम स्क्रीन */
+        canvas {
+            background-color: #1a1a1a;
+            border: 2px solid #333;
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(245, 0, 87, 0.2);
+        }
+
+        /* मोबाइल कंट्रोल्स (Buttons) */
+        .controls {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: 60px 60px 60px;
+            grid-template-rows: 60px 60px;
+            gap: 10px;
+        }
+        .btn {
+            background-color: #333;
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 0 #111;
+        }
+        .btn:active {
+            transform: translateY(4px);
+            box-shadow: none;
+            background-color: #f50057;
+        }
+        
+        /* वापस जाने का बटन */
+        .back-btn {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: none;
+            border: 1px solid #444;
+            color: #888;
+            padding: 5px 10px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <a href="index.html" class="back-btn">⬅ Back</a>
+
+    <div id="score-board">Score: <span id="score">0</span></div>
+    
+    <canvas id="gameCanvas" width="300" height="300"></canvas>
+
+    <div class="controls">
+        <div></div> <button class="btn" onclick="changeDirection('UP')">⬆️</button>
+        <div></div> <button class="btn" onclick="changeDirection('LEFT')">⬅️</button>
+        <button class="btn" onclick="changeDirection('DOWN')">⬇️</button>
+        <button class="btn" onclick="changeDirection('RIGHT')">➡️</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // गेम की सेटिंग्स
+        const box = 15; // सांप का साइज़
+        let snake = [];
+        snake[0] = { x: 10 * box, y: 10 * box }; // शुरुआत
+        
+        let food = {
+            x: Math.floor(Math.random() * 19 + 1) * box,
+            y: Math.floor(Math.random() * 19 + 1) * box
+        };
+
+        let score = 0;
+        let d; // दिशा (Direction)
+        let game;
+
+        // कीबोर्ड से कंट्रोल (PC के लिए)
+        document.addEventListener("keydown", direction);
+
+        function direction(event) {
+            let key = event.keyCode;
+            if (key == 37 && d != "RIGHT") d = "LEFT";
+            else if (key == 38 && d != "DOWN") d = "UP";
+            else if (key == 39 && d != "LEFT") d = "RIGHT";
+            else if (key == 40 && d != "UP") d = "DOWN";
+        }
+
+        // मोबाइल बटन से कंट्रोल
+        function changeDirection(dir) {
+            if (dir == "LEFT" && d != "RIGHT") d = "LEFT";
+            if (dir == "UP" && d != "DOWN") d = "UP";
+            if (dir == "RIGHT" && d != "LEFT") d = "RIGHT";
+            if (dir == "DOWN" && d != "UP") d = "DOWN";
+        }
+
+        // टक्कर चेक करना
+        function collision(head, array) {
+            for (let i = 0; i < array.length; i++) {
+                if (head.x == array[i].x && head.y == array[i].y) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // गेम को चलाना (Loop)
+        function draw() {
+            // बैकग्राउंड साफ़ करना
+            ctx.fillStyle = "#1a1a1a";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // सांप बनाना
+            for (let i = 0; i < snake.length; i++) {
+                ctx.fillStyle = (i == 0) ? "#f50057" : "white"; // मुंडी लाल, बाकी सफ़ेद
+                ctx.fillRect(snake[i].x, snake[i].y, box, box);
+                
+                ctx.strokeStyle = "black";
+                ctx.strokeRect(snake[i].x, snake[i].y, box, box);
+            }
+
+            // खाना बनाना
+            ctx.fillStyle = "#00ff00";
+            ctx.fillRect(food.x, food.y, box, box);
+
+            // पुरानी स्थिति
+            let snakeX = snake[0].x;
+            let snakeY = snake[0].y;
+
+            // दिशा
+            if (d == "LEFT") snakeX -= box;
+            if (d == "UP") snakeY -= box;
+            if (d == "RIGHT") snakeX += box;
+            if (d == "DOWN") snakeY += box;
+
+            // अगर खाना खाया
+            if (snakeX == food.x && snakeY == food.y) {
+                score++;
+                document.getElementById("score").innerText = score;
+                // नया खाना
+                food = {
+                    x: Math.floor(Math.random() * 19 + 1) * box,
+                    y: Math.floor(Math.random() * 19 + 1) * box
+                };
+            } else {
+                // पूंछ हटाओ
+                snake.pop();
+            }
+
+            // नया सिर
+            let newHead = { x: snakeX, y: snakeY };
+
+            // गेम ओवर के नियम (दीवार या खुद से टक्कर)
+            if (snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake)) {
+                clearInterval(game);
+                alert("Game Over! Score: " + score);
+                location.reload(); // गेम रीस्टार्ट
+            }
+
+            snake.unshift(newHead);
+        }
+
+        // हर 100ms में गेम अपडेट होगा
+        game = setInterval(draw, 100);
+
+    </script>
+</body>
+</html>
